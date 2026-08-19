@@ -1,0 +1,283 @@
+import React, { useMemo, useState } from "react";
+
+type TeamNewsItem = {
+  title: string;
+  source: string;
+  timestamp?: string;
+  summary: string;
+};
+
+type StatisticalAnalysis = {
+  home_form_index: number;
+  away_form_index: number;
+  home_strength: number;
+  away_strength: number;
+  tempo_score?: number;
+  xg_home?: number;
+  xg_away?: number;
+};
+
+type Probabilities = {
+  home_win: number;
+  draw: number;
+  away_win: number;
+};
+
+type AegisPrediction = {
+  status: "success" | "error" | "abstain";
+  league: string;
+  home_team: string;
+  away_team: string;
+  analysis_mode: string;
+  execution_depth: number;
+  strict_guardrails: boolean;
+  team_news?: TeamNewsItem[];
+  statistical_analysis?: StatisticalAnalysis;
+  probabilities?: Probabilities;
+  predicted_scoreline?: string;
+  confidence_score?: number;
+  risk_index?: number;
+  message?: string;
+};
+
+const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+
+function Card({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section style={styles.card}>
+      <h2 style={styles.cardTitle}>{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+export default function App() {
+  const [league, setLeague] = useState("English Premier League");
+  const [analysisMode, setAnalysisMode] = useState("Standard Production");
+  const [depth, setDepth] = useState(3);
+  const [strictGuardrails, setStrictGuardrails] = useState(true);
+  const [homeTeam, setHomeTeam] = useState("Arsenal");
+  const [awayTeam, setAwayTeam] = useState("Chelsea");
+
+  const prediction: AegisPrediction = useMemo(
+    () => ({
+      status: "success",
+      league,
+      home_team: homeTeam,
+      away_team: awayTeam,
+      analysis_mode: analysisMode,
+      execution_depth: depth,
+      strict_guardrails: strictGuardrails,
+      team_news: [
+        {
+          title: "Team news update",
+          source: "Club report",
+          summary: "Key players are available and expected to feature.",
+          timestamp: "Today",
+        },
+      ],
+      statistical_analysis: {
+        home_form_index: 92,
+        away_form_index: 82,
+        home_strength: 0.78,
+        away_strength: 0.67,
+        tempo_score: 0.61,
+        xg_home: 1.84,
+        xg_away: 1.21,
+      },
+      probabilities: {
+        home_win: 0.52,
+        draw: 0.27,
+        away_win: 0.21,
+      },
+      predicted_scoreline: `${homeTeam} 2 - 1 ${awayTeam}`,
+      confidence_score: 0.884,
+      risk_index: 0.12,
+      message: "Pipeline execution complete. Match simulation generated successfully.",
+    }),
+    [league, analysisMode, depth, strictGuardrails, homeTeam, awayTeam]
+  );
+
+  return (
+    <div style={styles.page}>
+      <Card title="⚙️ Prediction Parameters">
+        <div style={styles.grid}>
+          <label style={styles.label}>
+            <span>Select League / Tournament</span>
+            <input
+              style={styles.input}
+              value={league}
+              onChange={(e) => setLeague(e.target.value)}
+            />
+          </label>
+
+          <label style={styles.label}>
+            <span>Analysis Mode</span>
+            <input
+              style={styles.input}
+              value={analysisMode}
+              onChange={(e) => setAnalysisMode(e.target.value)}
+            />
+          </label>
+
+          <label style={styles.label}>
+            <span>Execution Depth (AI Weights): {depth}</span>
+            <input
+              type="range"
+              min={1}
+              max={5}
+              value={depth}
+              onChange={(e) => setDepth(Number(e.target.value))}
+            />
+          </label>
+
+          <label style={styles.checkboxRow}>
+            <input
+              type="checkbox"
+              checked={strictGuardrails}
+              onChange={(e) => setStrictGuardrails(e.target.checked)}
+            />
+            <span>Enforce Strict Guardrails</span>
+          </label>
+
+          <label style={styles.label}>
+            <span>Home Team</span>
+            <input
+              style={styles.input}
+              value={homeTeam}
+              onChange={(e) => setHomeTeam(e.target.value)}
+            />
+          </label>
+
+          <label style={styles.label}>
+            <span>Away Team</span>
+            <input
+              style={styles.input}
+              value={awayTeam}
+              onChange={(e) => setAwayTeam(e.target.value)}
+            />
+          </label>
+        </div>
+      </Card>
+
+      <Card title="🛡️ AEGIS Control: Match Prediction Nexus">
+        <p><strong>Status:</strong> {prediction.status}</p>
+        <p><strong>Operational Profile:</strong> Fixture Analysis & Forecasting Engine</p>
+        <p><strong>Fixture:</strong> {prediction.home_team} vs {prediction.away_team}</p>
+        <p><strong>Environment:</strong> Cloud Production | Version: 4.2.0-RELEASE | AEGIS Intelligence Core</p>
+        {prediction.message && <p style={{ marginTop: 8 }}>{prediction.message}</p>}
+      </Card>
+
+      <Card title="Team News">
+        {prediction.team_news?.length ? (
+          <div style={{ display: "grid", gap: 10 }}>
+            {prediction.team_news.map((item, i) => (
+              <div key={i} style={styles.item}>
+                <strong>{item.title}</strong>
+                <div style={{ opacity: 0.8 }}>{item.source}{item.timestamp ? ` • ${item.timestamp}` : ""}</div>
+                <div>{item.summary}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No team news available.</p>
+        )}
+      </Card>
+
+      <Card title="Statistical Analysis">
+        {prediction.statistical_analysis ? (
+          <div style={styles.stats}>
+            <div>Home Form Index: {prediction.statistical_analysis.home_form_index}</div>
+            <div>Away Form Index: {prediction.statistical_analysis.away_form_index}</div>
+            <div>Home Strength: {prediction.statistical_analysis.home_strength}</div>
+            <div>Away Strength: {prediction.statistical_analysis.away_strength}</div>
+            <div>Tempo Score: {prediction.statistical_analysis.tempo_score}</div>
+            <div>xG Home: {prediction.statistical_analysis.xg_home}</div>
+            <div>xG Away: {prediction.statistical_analysis.xg_away}</div>
+          </div>
+        ) : (
+          <p>No statistical analysis available.</p>
+        )}
+      </Card>
+
+      <Card title="Probability Breakdown">
+        {prediction.probabilities ? (
+          <div style={styles.stats}>
+            <div>Home Win: {pct(prediction.probabilities.home_win)}</div>
+            <div>Draw: {pct(prediction.probabilities.draw)}</div>
+            <div>Away Win: {pct(prediction.probabilities.away_win)}</div>
+          </div>
+        ) : (
+          <p>No probabilities available.</p>
+        )}
+      </Card>
+
+      <Card title="Forecast Summary">
+        <p><strong>Predicted Scoreline:</strong> {prediction.predicted_scoreline}</p>
+        <p><strong>Confidence:</strong> {prediction.confidence_score !== undefined ? pct(prediction.confidence_score) : "N/A"}</p>
+        <p><strong>Risk Index:</strong> {prediction.risk_index?.toFixed(2) ?? "N/A"}</p>
+        <p><strong>Guardrails:</strong> {strictGuardrails ? "Enabled" : "Disabled"}</p>
+      </Card>
+    </div>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    padding: 20,
+    background: "#f3f4f6",
+    fontFamily: "Arial, sans-serif",
+    display: "grid",
+    gap: 16,
+  },
+  card: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 16,
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+  },
+  cardTitle: {
+    margin: "0 0 12px 0",
+    fontSize: 18,
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: 12,
+  },
+  label: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  input: {
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    outline: "none",
+  },
+  checkboxRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    paddingTop: 28,
+  },
+  item: {
+    padding: 12,
+    borderRadius: 12,
+    background: "#f9fafb",
+    border: "1px solid #e5e7eb",
+  },
+  stats: {
+    display: "grid",
+    gap: 8,
+  },
+};
