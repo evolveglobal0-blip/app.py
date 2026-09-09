@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Clone rich public football source
         run: git clone --depth 1 https://github.com/xgabora/Club-Football-Match-Data-2000-2025.git source
+      - name: Install data tooling
+        run: python -m pip install --disable-pip-version-check pandas
       - name: Filter Big Five and normalize
         shell: bash
         run: |
@@ -26,24 +28,9 @@ jobs:
           d['MatchDate']=pd.to_datetime(d['MatchDate'],errors='coerce')
           d=d[(d.MatchDate>='2015-08-01') & (d.MatchDate<'2025-08-01')].copy()
           out=pd.DataFrame({
-            'date':d.MatchDate.dt.strftime('%Y-%m-%d'),
-            'competition':d.Division.map(divisions),
-            'season':d.get('Season',pd.Series(index=d.index,dtype=str)),
-            'home_team':d.HomeTeam,'away_team':d.AwayTeam,
-            'home_goals':pd.to_numeric(d.FTHome,errors='coerce'),
-            'away_goals':pd.to_numeric(d.FTAway,errors='coerce'),
-            'status':'FINISHED',
-            'home_elo':pd.to_numeric(d.HomeElo,errors='coerce'),
-            'away_elo':pd.to_numeric(d.AwayElo,errors='coerce'),
-            'form3_home':pd.to_numeric(d.Form3Home,errors='coerce'),
-            'form3_away':pd.to_numeric(d.Form3Away,errors='coerce'),
-            'form5_home':pd.to_numeric(d.Form5Home,errors='coerce'),
-            'form5_away':pd.to_numeric(d.Form5Away,errors='coerce'),
-            'odds_home':pd.to_numeric(d.OddHome,errors='coerce'),
-            'odds_draw':pd.to_numeric(d.OddDraw,errors='coerce'),
-            'odds_away':pd.to_numeric(d.OddAway,errors='coerce'),
-            'over25_odds':pd.to_numeric(d.Over25,errors='coerce'),
-            'under25_odds':pd.to_numeric(d.Under25,errors='coerce')
+            'date':d.MatchDate.dt.strftime('%Y-%m-%d'),'competition':d.Division.map(divisions),'season':d.get('Season',pd.Series(index=d.index,dtype=str)),
+            'home_team':d.HomeTeam,'away_team':d.AwayTeam,'home_goals':pd.to_numeric(d.FTHome,errors='coerce'),'away_goals':pd.to_numeric(d.FTAway,errors='coerce'),'status':'FINISHED',
+            'home_elo':pd.to_numeric(d.HomeElo,errors='coerce'),'away_elo':pd.to_numeric(d.AwayElo,errors='coerce'),'form3_home':pd.to_numeric(d.Form3Home,errors='coerce'),'form3_away':pd.to_numeric(d.Form3Away,errors='coerce'),'form5_home':pd.to_numeric(d.Form5Home,errors='coerce'),'form5_away':pd.to_numeric(d.Form5Away,errors='coerce'),'odds_home':pd.to_numeric(d.OddHome,errors='coerce'),'odds_draw':pd.to_numeric(d.OddDraw,errors='coerce'),'odds_away':pd.to_numeric(d.OddAway,errors='coerce'),'over25_odds':pd.to_numeric(d.Over25,errors='coerce'),'under25_odds':pd.to_numeric(d.Under25,errors='coerce')
           }).dropna(subset=['date','home_team','away_team','home_goals','away_goals'])
           out=out.sort_values(['date','competition','home_team','away_team']).drop_duplicates(['date','competition','home_team','away_team'])
           out.to_csv('corpus/rich_history.csv',index=False)
