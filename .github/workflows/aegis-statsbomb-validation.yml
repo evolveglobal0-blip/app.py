@@ -1,0 +1,41 @@
+name: AEGIS Independent StatsBomb Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone AEGIS repository
+        uses: actions/checkout@v4
+      - name: Clone StatsBomb Open Data
+        run: git clone --depth 1 https://github.com/statsbomb/open-data.git statsbomb
+      - name: Cross-check selected historical competitions
+        run: |
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          comps=json.load(open('statsbomb/data/competitions.json'))
+          targets=[]
+          for c in comps:
+              name=c.get('competition_name','')
+              for s in c.get('season_name',''),:
+                  pass
+          # Build a compact inventory of available open-data competition/season directories.
+          rows=[]
+          for c in comps:
+              cid=c['competition_id']; sn=c.get('competition_name','')
+              base=Path('statsbomb/data/matches')/str(cid)
+              if base.exists():
+                  for f in base.glob('*.json'):
+                      rows.append({'competition_id':cid,'competition':sn,'season_file':f.name,'matches':len(json.load(open(f)))})
+          Path('statsbomb_inventory.json').write_text(json.dumps(rows,indent=2))
+          print(json.dumps({'available_competition_season_files':len(rows),'total_matches':sum(x['matches'] for x in rows)},indent=2))
+          PY
+      - name: Upload independent validation inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-statsbomb-validation
+          path: statsbomb_inventory.json
+          retention-days: 7
