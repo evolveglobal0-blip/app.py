@@ -19,7 +19,7 @@ jobs:
           python - <<'PY'
           import csv, hashlib, json, shutil
           from pathlib import Path
-          root=Path('source/datasets'); leagues={'premier-league','spanish-la-liga','italian-serie-a','german-bundesliga','french-ligue-1'}; seasons={'1516','1617','1718','1819','1920','2021','2122','2223','2324','2425'}
+          root=Path('source/datasets'); leagues={'premier-league','la-liga','serie-a','bundesliga','ligue-1'}; seasons={'1516','1617','1718','1819','1920','2021','2122','2223','2324','2425'}
           files=[]; rows=[]
           for league in sorted(leagues):
             for p in sorted((root/league).glob('season-*.csv')):
