@@ -1,0 +1,48 @@
+name: AEGIS Corpus Staging
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone public football corpus source
+        run: git clone --depth 1 https://github.com/datasets/football-datasets.git source
+      - name: Build real corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p corpus/raw
+          python - <<'PY'
+          import csv, hashlib, json, shutil
+          from pathlib import Path
+          root=Path('source/datasets'); leagues={'premier-league','spanish-la-liga','italian-serie-a','german-bundesliga','french-ligue-1'}; seasons={'1516','1617','1718','1819','1920','2021','2122','2223','2324','2425'}
+          files=[]; rows=[]
+          for league in sorted(leagues):
+            for p in sorted((root/league).glob('season-*.csv')):
+              if p.stem.removeprefix('season-') not in seasons: continue
+              q=Path('corpus/raw')/f'{league}_{p.stem.removeprefix("season-")}.csv'; shutil.copy2(p,q); files.append(q)
+              with q.open(encoding='utf-8-sig',newline='') as f:
+                for r in csv.DictReader(f):
+                  try: rows.append((r['Date'],r['HomeTeam'],r['AwayTeam'],int(r['FTHG']),int(r['FTAG']),q.name))
+                  except: pass
+          rows.sort(key=lambda x:(x[0],x[1],x[2],x[5])); seen={}; conflicts=[]
+          for r in rows:
+            k=r[:3]
+            if k in seen and seen[k][3:5]!=r[3:5]: conflicts.append(k)
+            else: seen.setdefault(k,r)
+          clean=list(seen.values()); out=Path('corpus/aegis_history.csv')
+          with out.open('w',newline='',encoding='utf-8') as f:
+            w=csv.writer(f); w.writerow(['date','home_team','away_team','home_goals','away_goals','source_partition']); w.writerows(clean)
+          manifest={'real_corpus':True,'rows':len(clean),'partitions':len(files),'years':sorted({r[0][:4] for r in clean}),'conflicts':len(conflicts),'files':[{'path':str(p),'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in files],'canonical_sha256':hashlib.sha256(out.read_bytes()).hexdigest()}
+          Path('corpus/CORPUS_MANIFEST.json').write_text(json.dumps(manifest,indent=2)); print(json.dumps(manifest,indent=2)); assert len(clean)>=10000 and len(manifest['years'])>=5 and not conflicts
+          PY
+      - name: Upload real corpus artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-real-corpus-staging
+          path: corpus/
+          retention-days: 7
